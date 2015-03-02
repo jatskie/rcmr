@@ -32,14 +32,6 @@ $PAGE->requires->jquery_plugin('ui-css');
 
 echo $OUTPUT->header();
 
-if('' != $strStartDate)
-{
-	/**
-	 * Generate a report
-	 */
-	
-	
-}
 $strStyle = '.report-rcmr-session-name{ width: 50%;} .report-rcmr-session-count{ width: 25%; text-align: center !important; } .text-center{text-align: center !important;}';
 $strScript = ' $(function() { $( "#startdate" ).datepicker(); $( "#enddate" ).datepicker(); });';
 

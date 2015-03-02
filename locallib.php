@@ -128,11 +128,11 @@ function report_rcmr_attendance($aStrStartDate, $aStrEndDate)
 	$strBody .= html_writer::start_tag('td');
 	$strBody .= html_writer::tag( 'b', get_string('total') );
 	$strBody .= html_writer::end_tag('td');
-	$strBody .= html_writer::start_tag('td');
-	$strBody .= $intRegistrants;
+	$strBody .= html_writer::start_tag('td', array('class' => 'text-center'));
+	$strBody .= html_writer::tag('b', $intRegistrants);
 	$strBody .= html_writer::end_tag('td');
-	$strBody .= html_writer::start_tag('td');
-	$strBody .= $intAttendees;
+	$strBody .= html_writer::start_tag('td', array('class' => 'text-center'));
+	$strBody .= html_writer::tag('b', $intAttendees);
 	$strBody .= html_writer::end_tag('td');
 	$strBody .= html_writer::end_tag('tr');
 	

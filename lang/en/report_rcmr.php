@@ -1,7 +1,7 @@
 <?php
 
 $string['pluginname'] = 'Red Cross Report';
-$string['timeframe'] = 'Time Frame - last';
+$string['timeframe'] = 'Time Frame';
 $string['viewreport'] = 'View Report';
 $string['newusers'] = 'New Users';
 $string['returningusers'] = 'Returning Users';
