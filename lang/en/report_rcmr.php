@@ -1,6 +1,8 @@
 <?php
 
 $string['pluginname'] = 'Red Cross Report';
+$string['reportsummary'] = 'Summary Report';
+$string['exporttocsv'] = 'Export to CSV';
 $string['timeframe'] = 'Time Frame';
 $string['viewreport'] = 'View Report';
 $string['newusers'] = 'New Users';
