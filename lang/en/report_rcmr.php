@@ -12,3 +12,4 @@ $string['attendance'] = 'Total registrants and total attendees per webinar and t
 $string['sessionname'] = 'Session Name';
 $string['registrants'] = '# of Registrants';
 $string['attendees'] = '# of Attendees';
+$string['nosession'] = 'No session for the time frame selected';
