@@ -6,7 +6,7 @@ $ADMIN->add('reports', new admin_category('rcmrfolder', get_string('pluginname',
 // Adds the summary page (index.php)
 $ADMIN->add('rcmrfolder', new admin_externalpage('report_rcmr', get_string('reportsummary', 'report_rcmr'),	"$CFG->wwwroot/report/rcmr/index.php", 'report/stats:view',	empty($CFG->enablestats)));
 
-$ADMIN->add('rcmrfolder', new admin_externalpage('report_rcmr_course', get_string('reportsummary', 'report_rcmr'),	"$CFG->wwwroot/report/rcmr/index.php", 'report/stats:view',	empty($CFG->enablestats)));
+$ADMIN->add('rcmrfolder', new admin_externalpage('report_rcmr_course', get_string('reportcompletion', 'report_rcmr'),	"$CFG->wwwroot/report/rcmr/index.php", 'report/stats:view',	empty($CFG->enablestats)));
 
 // No report settings.
 $settings = null;
