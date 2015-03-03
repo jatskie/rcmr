@@ -32,7 +32,7 @@ $PAGE->requires->jquery_plugin('ui-css');
 
 echo $OUTPUT->header();
 
-$strStyle = '.report-rcmr-session-name{ width: 35%;} .report-rcmr-session-count{ width: 25%; text-align: center !important; } .text-center{text-align: center !important;}';
+$strStyle = '.report-row{margin-left: 20px !important;} table.report-rcmr tbody tr td{ width: 400px; } .report-rcmr-session-name{ width: 35%;} .report-rcmr-session-count{ width: 25%; text-align: center !important; } .text-center{text-align: center !important;}';
 $strScript = ' $(function() { $( "#startdate" ).datepicker(); $( "#enddate" ).datepicker(); });';
 
 $strBody  = html_writer::tag('style', $strStyle); 
@@ -41,18 +41,20 @@ $strBody .= html_writer::empty_tag('hr');
 $strBody .= html_writer::start_div('row');
 $strBody .= html_writer::start_tag('form', array('method' => 'post', 'action' => $CFG->wwwroot.'/report/rcmr/index.php'));
 $strBody .= html_writer::start_tag('table', array('class' => 'table table-striped report-rcmr'));
-$strBody .= html_writer::start_tag('tr', array('colspan' => 2));
+$strBody .= html_writer::start_tag('tr');
 $strBody .= html_writer::start_tag('td');
-$strBody .= html_writer::start_div('container');
+$strBody .= html_writer::start_div('row report-row');
 $strBody .= html_writer::tag('div', get_string('timeframe', 'report_rcmr'), array('class' => 'col-xs-3'));
 $strBody .= html_writer::start_div('col-xs-9');
 $strBody .= html_writer::empty_tag('input', array('name' => 'startdate', 'id' => 'startdate', 'placeholder' => 'Start Date', 'value' => $strStartDate));
 $strBody .= '&nbsp; to &nbsp;';
 $strBody .= html_writer::empty_tag('input', array('name' => 'enddate', 'id' => 'enddate', 'placeholder' => 'End Date', 'value' => $strEndDate));
 $strBody .= '&nbsp;';
-$strBody .= html_writer::checkbox('rcusersonly', '1', false, get_string('rcuseronly', 'report_rcmr'));
-$strBody .= html_writer::tag('button', get_string('viewreport', 'report_rcmr'), array('class' => 'btn btn-primary', 'type' => 'submit'));
+$strBody .= html_writer::checkbox('rcusersonly', '1', false, get_string('rcusersonly', 'report_rcmr'));
+$strBody .= '<br/>' . html_writer::tag('button', get_string('viewreport', 'report_rcmr'), array('class' => 'btn btn-primary', 'type' => 'submit'));
 $strBody .= html_writer::end_div();
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // New users
