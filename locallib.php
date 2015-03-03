@@ -37,7 +37,7 @@ function report_rcmr_new_users($aStrStartDate, $aStrEndDate)
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE lastaccess = 0 AND (timecreated > ? AND timecreated < ?)", array($arrTimeFrame['start'], $arrTimeFrame['end']));
+	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE lastaccess = 0 AND (timecreated > ? AND timecreated < ?)", $arrTimeFrame);
 	
 	return $intUsers;
 }
@@ -48,7 +48,7 @@ function report_rcmr_returning_users($aStrStartDate, $aStrEndDate)
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE (lastaccess > ? AND lastaccess < ?)", array($arrTimeFrame['start'], $arrTimeFrame['end']));
+	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE (lastaccess > ? AND lastaccess < ?)", $arrTimeFrame);
 	
 	return $intUsers;
 }
@@ -59,7 +59,7 @@ function report_rcmr_webinars($aStrStartDate, $aStrEndDate)
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {gototraining_session_times} WHERE startdate > ? AND startdate < ?", array($arrTimeFrame['start'], $arrTimeFrame['end']));
+	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {gototraining_session_times} WHERE startdate > ? AND startdate < ?", $arrTimeFrame);
 	
 	return $intSessions;
 }
@@ -70,7 +70,7 @@ function report_rcmr_face_to_face($aStrStartDate, $aStrEndDate)
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {facetoface_sessions_dates} WHERE timestart > ? AND timestart < ?", array($arrTimeFrame['start'], $arrTimeFrame['end']));
+	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {facetoface_sessions_dates} WHERE timestart > ? AND timestart < ?", $arrTimeFrame);
 	
 	return $intSessions;
 }
@@ -89,7 +89,7 @@ function report_rcmr_attendance($aStrStartDate, $aStrEndDate)
 						AND GST.sessionid = GTS.id
 						AND GST.startdate > ?
 						AND GST.startdate < ?
-						GROUP BY GTR.sessionid", array($arrTimeFrame['start'], $arrTimeFrame['end'])
+						GROUP BY GTR.sessionid", $arrTimeFrame
 	);
 
 	foreach ($arrData as $objWebinarData)
@@ -138,4 +138,117 @@ function report_rcmr_attendance($aStrStartDate, $aStrEndDate)
 	
 	
 	return $strBody;
+}
+
+function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0)
+{
+	global $DB;
+	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
+	
+	$strWhere = "WHERE ((timeenrolled > ? AND timeenrolled < ?) OR (timestarted > ? AND timestarted < ?) OR (timecompleted > ? AND timecompleted < ?))";
+	$arrSQLArgs = array(
+			$arrTimeFrame['start'], 
+			$arrTimeFrame['end'], 
+			$arrTimeFrame['start'], 
+			$arrTimeFrame['end'], 
+			$arrTimeFrame['start'], 
+			$arrTimeFrame['end']			
+	);
+	
+	if(0 != $aIntCourseid)
+	{
+		$strWhere .= " AND course = ?";
+		array_push($arrSQLArgs, $aIntCourseid);
+	}
+	
+	
+	$arrCompletions = $DB->get_records_sql("SELECT * FROM {course_completions} $strWhere", $arrSQLArgs);
+	
+	$intNotStarted = 0;
+	$intInProgress = 0;
+	$intCompleted = 0;
+	
+	$arrOverallCompletion = array();
+	
+	foreach ($arrCompletions as $objCompletion)
+	{
+		$intCourseid = $objCompletion->course;
+		
+		if(false == array_key_exists($intCourseid, $arrOverallCompletion))
+		{
+			$arrOverallCompletion[$intCourseid] = array(
+					'not_started' 	=> 0,
+					'in_progress' 	=> 0,
+					'completed' 	=> 0
+			);
+		}
+		
+		if(0 == $objCompletion->timestarted)
+		{
+			$arrOverallCompletion[$intCourseid]['not_started'] += 1;
+		}
+		else if(null != $objCompletion->timecompleted)
+		{
+			$arrOverallCompletion[$intCourseid]['completed'] += 1;
+		}
+		else
+		{
+			$arrOverallCompletion[$intCourseid]['in_progress'] += 1;
+		}
+	}
+	
+	return $arrOverallCompletion;
+}
+
+function report_rcmr_completion_html($aArrData)
+{
+	global $DB;
+	
+	$strBody  = html_writer::start_tag('table', array('class' => 'table'));
+	$strBody .= html_writer::start_tag('thead');
+	$strBody .= html_writer::start_tag('tr');
+	$strBody .= html_writer::start_tag('th');
+	$strBody .= 'Course';
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::start_tag('th');
+	$strBody .= 'Not Started';
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::start_tag('th');
+	$strBody .= 'In Progress';
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::start_tag('th');
+	$strBody .= 'Completed';
+	$strBody .= html_writer::end_tag('th');	
+	$strBody .= html_writer::end_tag('tr');
+	$strBody .= html_writer::end_tag('thead');
+	$strBody .= html_writer::start_tag('tbody');
+	foreach ($aArrData as $strCourseid => $arrCompletionData)
+	{
+		$objCourse = $DB->get_record('course', array('id' => $strCourseid));
+		$strBody .= html_writer::start_tag('tr');
+		$strBody .= html_writer::tag('td', $objCourse->fullname);
+		$strBody .= html_writer::tag('td', $arrCompletionData['not_started']);
+		$strBody .= html_writer::tag('td', $arrCompletionData['in_progress']);
+		$strBody .= html_writer::tag('td', $arrCompletionData['completed']);
+		$strBody .= html_writer::end_tag('tr');
+	}
+	$strBody .= html_writer::end_tag('tbody');
+	$strBody .= html_writer::end_tag('table');
+	
+	return $strBody;
+}
+
+function report_rcmr_build_course_dropdown($aIntCourseid)
+{
+	$arrCourses = get_courses();
+	$arrOptions = array();
+	
+	foreach ($arrCourses as $objCourse)
+	{
+		$arrOptions[$objCourse->id] = $objCourse->fullname;	
+	}
+	
+	asort($arrOptions);
+	
+	return html_writer::select($arrOptions, 'courseid', $aIntCourseid);
 }

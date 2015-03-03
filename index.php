@@ -8,8 +8,6 @@ $intId 	  		= optional_param('id', $SITE->id, PARAM_INT);
 $strStartDate 	= optional_param('startdate', '', PARAM_RAW); 
 $strEndDate 	= optional_param('enddate', '', PARAM_RAW);
 
-$intMode  		= 1;
-
 $course = $DB->get_record('course', array('id' => $intId), '*', MUST_EXIST);
 
 require_login($course);
