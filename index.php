@@ -7,6 +7,7 @@ require_once($CFG->dirroot.'/report/rcmr/locallib.php');
 $intId 	  		= optional_param('id', $SITE->id, PARAM_INT);
 $strStartDate 	= optional_param('startdate', '', PARAM_RAW); 
 $strEndDate 	= optional_param('enddate', '', PARAM_RAW);
+$boolRedcrossOnly = optional_param('rcusersonly', false, PARAM_BOOL);
 
 $course = $DB->get_record('course', array('id' => $intId), '*', MUST_EXIST);
 
@@ -50,7 +51,7 @@ $strBody .= html_writer::empty_tag('input', array('name' => 'startdate', 'id' =>
 $strBody .= '&nbsp; to &nbsp;';
 $strBody .= html_writer::empty_tag('input', array('name' => 'enddate', 'id' => 'enddate', 'placeholder' => 'End Date', 'value' => $strEndDate));
 $strBody .= '&nbsp;';
-$strBody .= html_writer::checkbox('rcusersonly', '1', false, get_string('rcusersonly', 'report_rcmr'));
+$strBody .= html_writer::checkbox('rcusersonly', '1', $boolRedcrossOnly, get_string('rcusersonly', 'report_rcmr'));
 $strBody .= '<br/>' . html_writer::tag('button', get_string('viewreport', 'report_rcmr'), array('class' => 'btn btn-primary', 'type' => 'submit'));
 $strBody .= html_writer::end_div();
 $strBody .= html_writer::end_tag('td');
@@ -63,7 +64,7 @@ $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('newusers', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_new_users($strStartDate, $strEndDate);
+$strBody .= report_rcmr_new_users($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 //Returning Users
@@ -72,7 +73,7 @@ $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('returningusers', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_returning_users($strStartDate, $strEndDate);
+$strBody .= report_rcmr_returning_users($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 //Webinars hosted
@@ -81,7 +82,7 @@ $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('webinars', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_webinars($strStartDate, $strEndDate);
+$strBody .= report_rcmr_webinars($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 //Face to face
@@ -90,7 +91,7 @@ $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('facetoface', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_face_to_face($strStartDate, $strEndDate);
+$strBody .= report_rcmr_face_to_face($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 //Webinars + F2F (excluding eLearning recorded sessions)
@@ -99,7 +100,7 @@ $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('totalsessions', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_webinars($strStartDate, $strEndDate) + report_rcmr_face_to_face($strStartDate, $strEndDate);
+$strBody .= report_rcmr_webinars($strStartDate, $strEndDate, $boolRedcrossOnly) + report_rcmr_face_to_face($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // Attendance
@@ -128,7 +129,7 @@ $strBody .= html_writer::end_tag('th');
 $strBody .= html_writer::end_tag('tr');
 $strBody .= html_writer::end_tag('thead');
 $strBody .= html_writer::start_tag('tbody');
-$strBody .= report_rcmr_attendance($strStartDate, $strEndDate);
+$strBody .= report_rcmr_attendance($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('tbody');
 $strBody .= html_writer::end_tag('table');
 $strBody .= html_writer::end_tag('td');

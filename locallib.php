@@ -31,64 +31,97 @@ function report_rcmr_timeframe($aStrStartDate, $aStrEndDate)
 	return $arrTimeFrame;
 }
 
-function report_rcmr_new_users($aStrStartDate, $aStrEndDate)
+function report_rcmr_new_users($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE lastaccess = 0 AND (timecreated > ? AND timecreated < ?)", $arrTimeFrame);
+	$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+	
+	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} user WHERE lastaccess = 0 AND (timecreated > ? AND timecreated < ?) $strWhere", $arrTimeFrame);
 	
 	return $intUsers;
 }
 
-function report_rcmr_returning_users($aStrStartDate, $aStrEndDate)
+function report_rcmr_returning_users($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} WHERE (lastaccess > ? AND lastaccess < ?)", $arrTimeFrame);
+	$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+	
+	$intUsers = $DB->count_records_sql("SELECT COUNT(id) FROM {user} user WHERE (lastaccess > ? AND lastaccess < ?) $strWhere", $arrTimeFrame);
 	
 	return $intUsers;
 }
 
-function report_rcmr_webinars($aStrStartDate, $aStrEndDate)
+function report_rcmr_webinars($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {gototraining_session_times} WHERE startdate > ? AND startdate < ?", $arrTimeFrame);
+	$strInnerJoin = '';
+	$strWhere = '';
+	
+	if(true == $aBoolRedcrossOnly)
+	{
+		$strInnerJoin = " INNER JOIN {user} user ON GST.id = user.id ";
+		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+	}
+	
+	$intSessions = $DB->count_records_sql("SELECT COUNT(GST.id) FROM {gototraining_session_times} GST $strInnerJoin WHERE (GST.startdate > ? AND GST.startdate < ?) $strWhere", $arrTimeFrame);
 	
 	return $intSessions;
 }
 
-function report_rcmr_face_to_face($aStrStartDate, $aStrEndDate)
+function report_rcmr_face_to_face($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
+
+	$strInnerJoin = '';
+	$strWhere = '';
 	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(id) FROM {facetoface_sessions_dates} WHERE timestart > ? AND timestart < ?", $arrTimeFrame);
+	if(true == $aBoolRedcrossOnly)
+	{
+		$strInnerJoin = " INNER JOIN {user} user ON FFS.id = user.id ";
+		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+	}
+	
+	$intSessions = $DB->count_records_sql("SELECT COUNT(FFS.id) FROM {facetoface_sessions_dates} FFS $strInnerJoin WHERE (FFS.timestart > ? AND FFS.timestart < ?) $strWhere", $arrTimeFrame);
 	
 	return $intSessions;
 }
 
-function report_rcmr_attendance($aStrStartDate, $aStrEndDate)
+function report_rcmr_attendance($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
 	$strBody = '';
 	$intRegistrants = 0;
 	$intAttendees = 0;
+	$strInnerJoin = '';
+	$strWhere = '';
+	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
+	if(true == $aBoolRedcrossOnly)
+	{
+		$strInnerJoin = " INNER JOIN {user} user ON GST.id = user.id ";
+		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+	}
+		
 	$arrData = $DB->get_records_sql("SELECT GTS.id, GTS.name, COUNT(GTR.id) as 'registrants', COUNT(GTR.id) as 'attendees'
 						FROM mdl_gototraining_registrants GTR, mdl_gototraining_sessions GTS, mdl_gototraining_session_times GST
+						$strInnerJoin
 						WHERE GTR.sessionid = GTS.id
 						AND GST.sessionid = GTS.id
 						AND GST.startdate > ?
 						AND GST.startdate < ?
+			            $strWhere
 						GROUP BY GTR.sessionid", $arrTimeFrame
 	);
 
@@ -251,4 +284,16 @@ function report_rcmr_build_course_dropdown($aIntCourseid)
 	asort($arrOptions);
 	
 	return html_writer::select($arrOptions, 'courseid', $aIntCourseid);
+}
+
+function report_rcmr_redcross_only($aBoolRedcrossOnly)
+{
+	$strWhere = '';
+	
+	if(true == $aBoolRedcrossOnly)
+	{
+		$strWhere = " AND user.email LIKE '%@redcrossblood.org.au%'";
+	}
+	
+	return $strWhere;
 }
