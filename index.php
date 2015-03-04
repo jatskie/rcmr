@@ -114,24 +114,7 @@ $strBody .= html_writer::end_tag('tr');
 
 $strBody .= html_writer::start_tag('tr');
 $strBody .= html_writer::start_tag('td', array('colspan' => 3));
-$strBody .= html_writer::start_tag('table', array('class' => 'table table-condensed table-bordered report-rcmr-attendance'));
-$strBody .= html_writer::start_tag('thead');
-$strBody .= html_writer::start_tag('tr');
-$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-name'));
-$strBody .= get_string('sessionname', 'report_rcmr');
-$strBody .= html_writer::end_tag('th');
-$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-count'));
-$strBody .= get_string('registrants', 'report_rcmr');
-$strBody .= html_writer::end_tag('th');
-$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-count'));
-$strBody .= get_string('attendees', 'report_rcmr');
-$strBody .= html_writer::end_tag('th');
-$strBody .= html_writer::end_tag('tr');
-$strBody .= html_writer::end_tag('thead');
-$strBody .= html_writer::start_tag('tbody');
-$strBody .= report_rcmr_attendance($strStartDate, $strEndDate, $boolRedcrossOnly);
-$strBody .= html_writer::end_tag('tbody');
-$strBody .= html_writer::end_tag('table');
+$strBody .= report_rcmr_attendance_html($strStartDate, $strEndDate, $boolRedcrossOnly);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 

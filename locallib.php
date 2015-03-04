@@ -97,10 +97,9 @@ function report_rcmr_face_to_face($aStrStartDate, $aStrEndDate, $aBoolRedcrossOn
 	return $intSessions;
 }
 
-function report_rcmr_attendance($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
+function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
 {
 	global $DB;
-	$strBody = '';
 	$intRegistrants = 0;
 	$intAttendees = 0;
 	$strInnerJoin = '';
@@ -124,7 +123,23 @@ function report_rcmr_attendance($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly
 			            $strWhere
 						GROUP BY GTR.sessionid", $arrTimeFrame
 	);
-
+	
+	$strBody  = html_writer::start_tag('table', array('class' => 'table table-condensed table-bordered report-rcmr-attendance'));
+	$strBody .= html_writer::start_tag('thead');
+	$strBody .= html_writer::start_tag('tr');
+	$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-name'));
+	$strBody .= get_string('sessionname', 'report_rcmr') . " (" . count($arrData) . ")";
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-count'));
+	$strBody .= get_string('registrants', 'report_rcmr');
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-count'));
+	$strBody .= get_string('attendees', 'report_rcmr');
+	$strBody .= html_writer::end_tag('th');
+	$strBody .= html_writer::end_tag('tr');
+	$strBody .= html_writer::end_tag('thead');
+	$strBody .= html_writer::start_tag('tbody');
+	
 	foreach ($arrData as $objWebinarData)
 	{
 		$intRegistrants += $objWebinarData->registrants;
@@ -169,6 +184,8 @@ function report_rcmr_attendance($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly
 	$strBody .= html_writer::end_tag('td');
 	$strBody .= html_writer::end_tag('tr');
 	
+	$strBody .= html_writer::end_tag('tbody');
+	$strBody .= html_writer::end_tag('table');
 	
 	return $strBody;
 }
