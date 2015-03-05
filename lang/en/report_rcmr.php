@@ -4,6 +4,10 @@ $string['pluginname'] = 'Red Cross Report';
 
 $string['attendance'] = 'Total registrants and total attendees per webinar and total for month';
 $string['attendees'] = '# of Attendees';
+$string['cpdpoints_allocated'] = 'CPD Points Allocated';
+$string['cpdpoints_offered'] = 'CPD Points Offered';
+$string['elearning'] = 'eLearning Enrolments';
+$string['elearning_completion'] = 'Completions per eLearning';
 $string['exporttocsv'] = 'Export to CSV';
 $string['facetoface'] = 'Face to Face Sessions Hosted';
 $string['newusers'] = 'New Users';
@@ -16,5 +20,6 @@ $string['returningusers'] = 'Returning Users';
 $string['sessionname'] = 'Session Name';
 $string['timeframe'] = 'Time Frame';
 $string['totalsessions'] = 'Total number of both webinars and face to face sessions hosted (exclude eLearning and recorded sessions)';
+$string['videosuploaded'] = "Total number of videos uploaded";
 $string['viewreport'] = 'View Report';
 $string['webinars'] = 'Webinars Hosted';

@@ -10,6 +10,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 require_once($CFG->dirroot.'/lib/statslib.php');
+require_once($CFG->dirroot.'/lib/coursecatlib.php');
 
 function report_rcmr_timeframe($aStrStartDate, $aStrEndDate)
 {
@@ -62,17 +63,8 @@ function report_rcmr_webinars($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly =
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
-	
-	$strInnerJoin = '';
-	$strWhere = '';
-	
-	if(true == $aBoolRedcrossOnly)
-	{
-		$strInnerJoin = " INNER JOIN {user} user ON GST.id = user.id ";
-		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
-	}
-	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(GST.id) FROM {gototraining_session_times} GST $strInnerJoin WHERE (GST.startdate > ? AND GST.startdate < ?) $strWhere", $arrTimeFrame);
+		
+	$intSessions = $DB->count_records_sql("SELECT COUNT(GST.id) FROM {gototraining_session_times} GST WHERE (GST.startdate > ? AND GST.startdate < ?)", $arrTimeFrame);
 	
 	return $intSessions;
 }
@@ -82,19 +74,21 @@ function report_rcmr_face_to_face($aStrStartDate, $aStrEndDate, $aBoolRedcrossOn
 	global $DB;
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
-
-	$strInnerJoin = '';
-	$strWhere = '';
 	
-	if(true == $aBoolRedcrossOnly)
-	{
-		$strInnerJoin = " INNER JOIN {user} user ON FFS.id = user.id ";
-		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
-	}
-	
-	$intSessions = $DB->count_records_sql("SELECT COUNT(FFS.id) FROM {facetoface_sessions_dates} FFS $strInnerJoin WHERE (FFS.timestart > ? AND FFS.timestart < ?) $strWhere", $arrTimeFrame);
+	$intSessions = $DB->count_records_sql("SELECT COUNT(FFS.id) FROM {facetoface_sessions_dates} FFS WHERE (FFS.timestart > ? AND FFS.timestart < ?)", $arrTimeFrame);
 	
 	return $intSessions;
+}
+
+function report_rcmr_elearning($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
+{
+	global $DB;
+	
+	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
+	
+	$intElearning = $DB->count_records_sql("SELECT COUNT(id) FROM {enrol} WHERE timecreated > ? AND timecreated < ?", $arrTimeFrame);
+	
+	return $intElearning;
 }
 
 function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcrossOnly = false)
@@ -190,12 +184,24 @@ function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcros
 	return $strBody;
 }
 
-function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0)
+function report_rcmr_lms_videos($aStrStartDate, $aStrEndDate)
 {
 	global $DB;
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$strWhere = "WHERE ((timeenrolled > ? AND timeenrolled < ?) OR (timestarted > ? AND timestarted < ?) OR (timecompleted > ? AND timecompleted < ?))";
+	$intVideos = $DB->count_records_sql("SELECT COUNT(id) FROM {files} WHERE mimetype LIKE '%video%' AND (timecreated > ? AND timecreated < ?)", $arrTimeFrame);
+		
+	return $intVideos;
+}
+
+function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0, $aIntCategoryid = 0)
+{
+	global $DB;
+	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
+	
+	$strWhere = "WHERE ((completion.timeenrolled > ? AND completion.timeenrolled < ?) OR (completion.timestarted > ? AND completion.timestarted < ?) OR (completion.timecompleted > ? AND completion.timecompleted < ?))";
+	$strInnerJoin = '';
+	
 	$arrSQLArgs = array(
 			$arrTimeFrame['start'], 
 			$arrTimeFrame['end'], 
@@ -205,21 +211,22 @@ function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0)
 			$arrTimeFrame['end']			
 	);
 	
-	if(0 != $aIntCourseid)
+	if(0 != $aIntCourseid && 0 == $aIntCategoryid)
 	{
 		$strWhere .= " AND course = ?";
 		array_push($arrSQLArgs, $aIntCourseid);
 	}
+	else if(0 != $aIntCategoryid)
+	{
+		$strWhere .= " AND completion.course IN ( SELECT course.id FROM {course} course INNER JOIN {course_categories} cat on course.category = cat.id WHERE cat.id = '$aIntCategoryid') "; 
+	}
 	
+	$arrCompletions = $DB->get_records_sql("SELECT completion.id, completion.course, completion.timeenrolled, completion.timestarted, completion.timecompleted FROM {course_completions} completion $strInnerJoin $strWhere", $arrSQLArgs);
 	
-	$arrCompletions = $DB->get_records_sql("SELECT * FROM {course_completions} $strWhere", $arrSQLArgs);
-	
-	$intNotStarted = 0;
-	$intInProgress = 0;
-	$intCompleted = 0;
+	$arrManualEnrolment = $DB->get_records_sql("SELECT * FROM {enrol}");
 	
 	$arrOverallCompletion = array();
-	
+	// Build completion data
 	foreach ($arrCompletions as $objCompletion)
 	{
 		$intCourseid = $objCompletion->course;
@@ -227,6 +234,7 @@ function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0)
 		if(false == array_key_exists($intCourseid, $arrOverallCompletion))
 		{
 			$arrOverallCompletion[$intCourseid] = array(
+					'enrolment'		=> 0,
 					'not_started' 	=> 0,
 					'in_progress' 	=> 0,
 					'completed' 	=> 0
@@ -247,6 +255,25 @@ function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0)
 		}
 	}
 	
+	// Build enrolment data
+	/*
+	foreach ($arrManualEnrolment as $objUserEnrolment)
+	{
+		$intCourseid = $objUserEnrolment->courseid;
+		if(false == array_key_exists($intCourseid, $arrOverallCompletion))
+		{
+			$arrOverallCompletion[$intCourseid] = array(
+					'enrolment'		=> 0,
+					'not_started' 	=> 0,
+					'in_progress' 	=> 0,
+					'completed' 	=> 0
+			);
+		}
+		
+		$arrOverallCompletion[$intCourseid]['enrolment'] += 1;
+	}
+	*/
+	
 	return $arrOverallCompletion;
 }
 
@@ -258,8 +285,11 @@ function report_rcmr_completion_html($aArrData)
 	$strBody .= html_writer::start_tag('thead');
 	$strBody .= html_writer::start_tag('tr');
 	$strBody .= html_writer::start_tag('th');
-	$strBody .= 'Course';
+	$strBody .= 'Course (' . count($aArrData) . ')';
 	$strBody .= html_writer::end_tag('th');
+	//$strBody .= html_writer::start_tag('th');
+	//$strBody .= 'Current Enrolment';
+	//$strBody .= html_writer::end_tag('th');
 	$strBody .= html_writer::start_tag('th');
 	$strBody .= 'Not Started';
 	$strBody .= html_writer::end_tag('th');
@@ -277,6 +307,7 @@ function report_rcmr_completion_html($aArrData)
 		$objCourse = $DB->get_record('course', array('id' => $strCourseid));
 		$strBody .= html_writer::start_tag('tr');
 		$strBody .= html_writer::tag('td', $objCourse->fullname);
+		//$strBody .= html_writer::tag('td', $arrCompletionData['enrolment']);
 		$strBody .= html_writer::tag('td', $arrCompletionData['not_started']);
 		$strBody .= html_writer::tag('td', $arrCompletionData['in_progress']);
 		$strBody .= html_writer::tag('td', $arrCompletionData['completed']);
@@ -303,6 +334,13 @@ function report_rcmr_build_course_dropdown($aIntCourseid)
 	return html_writer::select($arrOptions, 'courseid', $aIntCourseid);
 }
 
+function report_rcmr_build_course_category_dropdown($aIntCategoryid)
+{
+	$arrCategories = coursecat::make_categories_list();
+	
+	return html_writer::select($arrCategories, 'categoryid', $aIntCategoryid);
+}
+
 function report_rcmr_redcross_only($aBoolRedcrossOnly)
 {
 	$strWhere = '';
@@ -313,4 +351,14 @@ function report_rcmr_redcross_only($aBoolRedcrossOnly)
 	}
 	
 	return $strWhere;
+}
+
+function report_rcmr_get_points($aStrStartDate, $aStrEndDate)
+{
+	global $DB;
+	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
+	
+	$arrCPDPoints = $DB->get_records("certificate");
+	
+	return 0;
 }
