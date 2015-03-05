@@ -23,10 +23,14 @@ $url = new moodle_url('/report/rcmr/index.php');
 
 $PAGE->set_url($url);
 $PAGE->set_title($strTitle);
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('report');
+
+// Breadcrumbs
 $PAGE->navbar->add(get_string('report'));
 $PAGE->navbar->add(get_string('pluginname', 'report_rcmr'));
 $PAGE->navbar->add(get_string('reportsummary', 'report_rcmr'), new moodle_url('index.php'));
+
+// Additional javascripts
 $PAGE->requires->jquery();
 $PAGE->requires->jquery_plugin('ui');
 $PAGE->requires->jquery_plugin('ui-css');
@@ -39,23 +43,21 @@ $strScript = ' $(function() { $( "#startdate" ).datepicker(); $( "#enddate" ).da
 $strBody  = html_writer::tag('style', $strStyle); 
 $strBody .= html_writer::tag('h1', get_string('pluginname', 'report_rcmr') );
 $strBody .= html_writer::empty_tag('hr');
-$strBody .= html_writer::start_div('row');
+$strBody .= html_writer::start_div('row span12');
 $strBody .= html_writer::start_tag('form', array('method' => 'post', 'action' => $CFG->wwwroot.'/report/rcmr/index.php'));
 $strBody .= html_writer::start_tag('table', array('class' => 'table table-striped report-rcmr'));
 $strBody .= html_writer::start_tag('tr');
-$strBody .= html_writer::start_tag('td');
+$strBody .= html_writer::start_tag('td', array('colspan' => 2));
 $strBody .= html_writer::start_div('row report-row');
-$strBody .= html_writer::tag('div', get_string('timeframe', 'report_rcmr'), array('class' => 'col-xs-3'));
-$strBody .= html_writer::start_div('col-xs-9');
+$strBody .= html_writer::tag('div', get_string('timeframe', 'report_rcmr'), array('class' => 'span2'));
+$strBody .= html_writer::start_div('span8');
 $strBody .= html_writer::empty_tag('input', array('name' => 'startdate', 'id' => 'startdate', 'placeholder' => 'Start Date', 'value' => $strStartDate));
 $strBody .= '&nbsp; to &nbsp;';
 $strBody .= html_writer::empty_tag('input', array('name' => 'enddate', 'id' => 'enddate', 'placeholder' => 'End Date', 'value' => $strEndDate));
 $strBody .= '&nbsp;';
 $strBody .= html_writer::checkbox('rcusersonly', '1', $boolRedcrossOnly, get_string('rcusersonly', 'report_rcmr'));
-$strBody .= '<br/>' . html_writer::tag('button', get_string('viewreport', 'report_rcmr'), array('class' => 'btn btn-primary', 'type' => 'submit'));
 $strBody .= html_writer::end_div();
-$strBody .= html_writer::end_tag('td');
-$strBody .= html_writer::start_tag('td');
+$strBody .= html_writer::tag('div', html_writer::tag('button', get_string('viewreport', 'report_rcmr'), array('class' => 'btn btn-primary', 'type' => 'submit')), array('class' => 'span2'));
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // New users
@@ -74,6 +76,24 @@ $strBody .= get_string('returningusers', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
 $strBody .= report_rcmr_returning_users($strStartDate, $strEndDate, $boolRedcrossOnly);
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+//Elearning
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('elearning', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+$strBody .= report_rcmr_elearning($strStartDate, $strEndDate, $boolRedcrossOnly);
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+//Elearning
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('elearning_completion', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+$strBody .= html_writer::tag('a', get_string('reportcompletion', 'report_rcmr'), array('href' => "$CFG->wwwroot/report/rcmr/completion.php"));
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 //Webinars hosted
@@ -101,6 +121,24 @@ $strBody .= get_string('totalsessions', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
 $strBody .= report_rcmr_webinars($strStartDate, $strEndDate, $boolRedcrossOnly) + report_rcmr_face_to_face($strStartDate, $strEndDate, $boolRedcrossOnly);
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+// Videos
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('videosuploaded', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+$strBody .= report_rcmr_lms_videos($strStartDate, $strEndDate);
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+// Points
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('cpdpoints_allocated', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+$strBody .= report_rcmr_get_points($strStartDate, $strEndDate);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // Attendance
