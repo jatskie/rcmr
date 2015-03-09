@@ -175,6 +175,12 @@ function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcros
 	
 	foreach ($arrAttendanceData as $strGTSName => $arrWebinarData)
 	{
+		// skip empty sessions
+		if(0 == $arrWebinarData['registrants'] && 0 == $arrWebinarData['attendees'])
+		{
+			continue;
+		}
+		
 		$intRegistrants += $arrWebinarData['registrants'];
 		$intAttendees += $arrWebinarData['attendees'];
 		
