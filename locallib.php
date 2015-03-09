@@ -101,28 +101,67 @@ function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcros
 	
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	if(true == $aBoolRedcrossOnly)
+	$arrGTR = array();
+	
+	$arrAttendanceData = array();
+	
+	// Get all sessions created
+	$arrGTS = $DB->get_records_sql("SELECT * FROM {gototraining_sessions}");
+	
+	// Get all registrants grouped by session
+	foreach ($arrGTS as $objGTS)
 	{
-		$strInnerJoin = " INNER JOIN {user} user ON GST.id = user.id ";
-		$strWhere = report_rcmr_redcross_only($aBoolRedcrossOnly);
+		$arrGTR[$objGTS->id] = $DB->get_records_sql("
+				SELECT * 
+				FROM {gototraining_registrants} 
+				WHERE sessionid = $objGTS->id 
+				AND (registrationdate > ? AND registrationdate < ?)", 
+				$arrTimeFrame
+		);			
 	}
+	
+	// Per session
+	foreach ($arrGTR as $intGTSid => $arrGTRR)
+	{
+		$strGTSName = $arrGTS[$intGTSid]->name;
+		$arrAttendanceData[$strGTSName] = array(
+				'registrants' 	=> 0,
+				'attendees'		=> 0
+		);
+		$objGTCourse = $DB->get_record('gototraining', array('id' => $arrGTS[$intGTSid]->gototraining));		
+		$objCourseModules = $DB->get_records('course_modules', array('course' => $objGTCourse->id));
 		
-	$arrData = $DB->get_records_sql("SELECT GTS.id, GTS.name, COUNT(GTR.id) as 'registrants', COUNT(GTR.id) as 'attendees'
-						FROM mdl_gototraining_registrants GTR, mdl_gototraining_sessions GTS, mdl_gototraining_session_times GST
-						$strInnerJoin
-						WHERE GTR.sessionid = GTS.id
-						AND GST.sessionid = GTS.id
-						AND GST.startdate > ?
-						AND GST.startdate < ?
-			            $strWhere
-						GROUP BY GTR.sessionid", $arrTimeFrame
-	);
+		$intCompletedModules = 0;
+		
+		// per user
+		foreach ($arrGTRR as $objUser)
+		{
+			$objUserid = $DB->get_record('user', array('email' => $objUser->email),'id');
+			// per modules in a course
+			foreach ($objCourseModules as $objModule)
+			{
+				$completionCheck = $DB->get_record('course_modules_completion', array('coursemoduleid' => $objModule->id, 'userid' => $objUserid->id));
+
+				if(false != $completionCheck && 1 == $completionCheck->completionstate)
+				{
+					++$intCompletedModules;
+				}
+			}
+				
+			if(0 < $intCompletedModules)
+			{
+				$arrAttendanceData[$strGTSName]['attendees'] += 1;
+			}						
+		}
+
+		$arrAttendanceData[$strGTSName]['registrants'] = count($arrGTRR);		
+	}
 	
 	$strBody  = html_writer::start_tag('table', array('class' => 'table table-condensed table-bordered report-rcmr-attendance'));
 	$strBody .= html_writer::start_tag('thead');
 	$strBody .= html_writer::start_tag('tr');
 	$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-name'));
-	$strBody .= get_string('sessionname', 'report_rcmr') . " (" . count($arrData) . ")";
+	$strBody .= get_string('sessionname', 'report_rcmr') . " (" . count($arrAttendanceData) . ")";
 	$strBody .= html_writer::end_tag('th');
 	$strBody .= html_writer::start_tag('th', array('class' => 'report-rcmr-session-count'));
 	$strBody .= get_string('registrants', 'report_rcmr');
@@ -134,30 +173,30 @@ function report_rcmr_attendance_html($aStrStartDate, $aStrEndDate, $aBoolRedcros
 	$strBody .= html_writer::end_tag('thead');
 	$strBody .= html_writer::start_tag('tbody');
 	
-	foreach ($arrData as $objWebinarData)
+	foreach ($arrAttendanceData as $strGTSName => $arrWebinarData)
 	{
-		$intRegistrants += $objWebinarData->registrants;
-		$intAttendees += $objWebinarData->attendees;
+		$intRegistrants += $arrWebinarData['registrants'];
+		$intAttendees += $arrWebinarData['attendees'];
 		
-		if(empty($objWebinarData->name))
+		if("" == $strGTSName)
 		{
-			$objWebinarData->name = 'Not set';
+			$$strGTSName = 'Not set';
 		}
 		
 		$strBody .= html_writer::start_tag('tr');
 		$strBody .= html_writer::start_tag('td');
-		$strBody .= $objWebinarData->name;
+		$strBody .= $strGTSName;
 		$strBody .= html_writer::end_tag('td');
 		$strBody .= html_writer::start_tag('td', array('class' => 'text-center'));
-		$strBody .= $objWebinarData->registrants;
+		$strBody .= $arrWebinarData['registrants'];
 		$strBody .= html_writer::end_tag('td');
 		$strBody .= html_writer::start_tag('td', array('class' => 'text-center'));
-		$strBody .= $objWebinarData->attendees;
+		$strBody .= $arrWebinarData['attendees'];
 		$strBody .= html_writer::end_tag('td');
 		$strBody .= html_writer::end_tag('tr');
 	}
 	
-	if(empty($arrData))
+	if(empty($arrAttendanceData))
 	{
 		$strBody .= html_writer::start_tag('tr');
 		$strBody .= html_writer::start_tag('td', array('colspan' => 3));
