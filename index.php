@@ -124,12 +124,37 @@ $strBody .= report_rcmr_webinars($strStartDate, $strEndDate, $boolRedcrossOnly) 
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // Videos
+
+$arrVideos = report_rcmr_lms_videos($strStartDate, $strEndDate);
+$arrTopVideos = report_rcmr_lms_videos_top($arrVideos);
+
 $strBody .= html_writer::start_tag('tr');
 $strBody .= html_writer::start_tag('td');
 $strBody .= get_string('videosuploaded', 'report_rcmr');
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::start_tag('td');
-$strBody .= report_rcmr_lms_videos($strStartDate, $strEndDate);
+$strBody .= count($arrVideos);
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('topvideosuploaded', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+foreach ($arrTopVideos as $strVideo)
+{
+	$strBody .= html_writer::tag('p', $strVideo);
+}
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::end_tag('tr');
+
+$strBody .= html_writer::start_tag('tr');
+$strBody .= html_writer::start_tag('td');
+$strBody .= get_string('videoscompleted', 'report_rcmr');
+$strBody .= html_writer::end_tag('td');
+$strBody .= html_writer::start_tag('td');
+$strBody .= report_rcmr_lms_videos_completed($arrVideos);
 $strBody .= html_writer::end_tag('td');
 $strBody .= html_writer::end_tag('tr');
 // Points

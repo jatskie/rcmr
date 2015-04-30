@@ -234,9 +234,64 @@ function report_rcmr_lms_videos($aStrStartDate, $aStrEndDate)
 	global $DB;
 	$arrTimeFrame = report_rcmr_timeframe($aStrStartDate, $aStrEndDate);
 	
-	$intVideos = $DB->count_records_sql("SELECT COUNT(id) FROM {files} WHERE mimetype LIKE '%video%' AND (timecreated > ? AND timecreated < ?)", $arrTimeFrame);
+	$strSql = "SELECT cmc.id, cmc.userid, cmc.coursemoduleid FROM {course_modules_completion} cmc 
+				INNER JOIN {course_modules} cm ON cmc.coursemoduleid = cm.id
+				WHERE cm.module = 10 AND cm.completion > 0 AND (cmc.timemodified > ? AND cmc.timemodified < ?)";
+	
+	$arrVideos = $DB->get_records_sql($strSql, $arrTimeFrame);			
+	$arrVideoResults = array();
+	
+	// set key
+	foreach ($arrVideos as $objVideo)
+	{
+		if(false == in_array($objVideo->coursemoduleid, $arrVideoResults))
+		{
+			$arrVideoResults[$objVideo->coursemoduleid] = 0;
+		}
+	}
+	
+	// Count unique
+	foreach ($arrVideos as $objVideo)
+	{
+		$arrVideoResults[$objVideo->coursemoduleid] += 1;	
+	}			
+	
+	return $arrVideoResults;
+}
+
+function report_rcmr_lms_videos_top($aArrVideosList, $aIntLevel = 5)
+{
+	global $DB;
+	
+	arsort($aArrVideosList);
+	
+	$arrTopOfTheList = array_slice($aArrVideosList, 0, $aIntLevel, true);
+	$arrTopVideos = array();
+	
+	foreach ($arrTopOfTheList as $intKey => $intValue)
+	{
+		$strSql = "SELECT cs.name FROM {course_sections} cs
+					INNER JOIN {course_modules} cm ON cs.id = cm.section
+					WHERE cm.id = $intKey";
 		
-	return $intVideos;
+		$objDBResult = $DB->get_record_sql($strSql);
+
+		array_push($arrTopVideos, $objDBResult->name);
+	}
+	
+	return $arrTopVideos;
+}
+
+function report_rcmr_lms_videos_completed($aArrVideoList)
+{
+	$intTotalCompleted = 0;
+	
+	foreach ($aArrVideoList as $intCompleted)
+	{
+		$intTotalCompleted += $intCompleted;	
+	}
+	
+	return $intTotalCompleted;
 }
 
 function report_rcmr_completion($aStrStartDate, $aStrEndDate, $aIntCourseid = 0, $aIntCategoryid = 0)
